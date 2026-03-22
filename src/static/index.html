@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>rekall</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, 'Helvetica Neue', sans-serif;
+      background: #f5f5f0;
+      color: #1a1a1a;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Landing state */
+    .landing {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 24px;
+      transition: opacity 0.3s ease;
+    }
+
+    .landing h1 {
+      font-size: 42px;
+      font-weight: 400;
+      color: #1a1a1a;
+      letter-spacing: -0.5px;
+    }
+
+    .landing .input-wrap {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    .landing textarea {
+      width: 100%;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 16px;
+      padding: 18px 20px;
+      color: #1a1a1a;
+      font-family: inherit;
+      font-size: 16px;
+      outline: none;
+      resize: none;
+      min-height: 70px;
+    }
+
+    .landing textarea:focus {
+      border-color: #999;
+    }
+
+    .landing textarea::placeholder {
+      color: #aaa;
+    }
+
+    .landing.hidden { display: none; }
+
+    /* Chat state */
+    .chat-container {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .chat-container.active {
+      display: flex;
+    }
+
+    .chat-header {
+      padding: 14px 24px;
+      border-bottom: 1px solid #e0e0db;
+    }
+
+    .chat-header h1 {
+      font-size: 18px;
+      font-weight: 500;
+      color: #1a1a1a;
+    }
+
+    .chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .message {
+      max-width: 780px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .message.user .bubble {
+      background: #fff;
+      border: 1px solid #e0e0db;
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: #1a1a1a;
+    }
+
+    .message.assistant .bubble {
+      padding: 12px 0;
+      color: #333;
+      line-height: 1.7;
+    }
+
+    .message .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+      color: #999;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .message.assistant .label { color: #666; }
+
+    .message pre {
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 14px;
+      overflow-x: auto;
+      margin: 10px 0;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #e0e0e0;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .message code {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      background: #eee;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    .message pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    .message p { margin: 8px 0; }
+
+    .sources {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e0e0db;
+    }
+
+    .sources summary {
+      font-size: 12px;
+      color: #999;
+      cursor: pointer;
+    }
+
+    .sources a {
+      display: block;
+      font-size: 12px;
+      color: #666;
+      text-decoration: none;
+      padding: 2px 0;
+    }
+
+    .sources a:hover { color: #1a1a1a; }
+
+    .relevance {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    .relevance.high {
+      background: rgba(34, 197, 94, 0.12);
+      color: #16a34a;
+    }
+
+    .relevance.medium {
+      background: rgba(234, 179, 8, 0.12);
+      color: #b45309;
+    }
+
+    .relevance.low {
+      background: rgba(239, 68, 68, 0.12);
+      color: #dc2626;
+    }
+
+    .typing {
+      display: inline-flex;
+      gap: 4px;
+      padding: 4px 0;
+    }
+
+    .typing span {
+      width: 5px;
+      height: 5px;
+      background: #999;
+      border-radius: 50%;
+      animation: blink 1.4s infinite;
+    }
+
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0.2; }
+      40% { opacity: 1; }
+    }
+
+    .chat-input {
+      padding: 16px 24px;
+      border-top: 1px solid #e0e0db;
+    }
+
+    .chat-input .input-wrap {
+      max-width: 780px;
+      margin: 0 auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .chat-input input {
+      flex: 1;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #1a1a1a;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .chat-input input:focus {
+      border-color: #999;
+    }
+
+    .chat-input input::placeholder {
+      color: #aaa;
+    }
+
+    .chat-input button {
+      background: #1a1a1a;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 20px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .chat-input button:hover { background: #333; }
+    .chat-input button:disabled { opacity: 0.3; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <!-- Landing -->
+  <div class="landing" id="landing">
+    <h1>rekall</h1>
+    <div class="input-wrap">
+      <textarea
+        id="landing-input"
+        placeholder="Ask anything..."
+        rows="2"
+      ></textarea>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-container" id="chat-container">
+    <div class="chat-header">
+      <h1>rekall</h1>
+    </div>
+    <div class="chat" id="chat"></div>
+    <div class="chat-input">
+      <div class="input-wrap">
+        <input
+          type="text"
+          id="chat-input"
+          placeholder="Ask your question..."
+          autocomplete="off"
+        />
+        <button id="send" onclick="sendFromChat()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const landing = document.getElementById('landing');
+    const chatContainer = document.getElementById('chat-container');
+    const chat = document.getElementById('chat');
+    const landingInput = document.getElementById('landing-input');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send');
+
+    landingInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const q = landingInput.value.trim();
+        if (q) startChat(q);
+      }
+    });
+
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !sendBtn.disabled) sendFromChat();
+    });
+
+    function startChat(question) {
+      landing.classList.add('hidden');
+      chatContainer.classList.add('active');
+      chatInput.focus();
+      sendQuery(question);
+    }
+
+    function sendFromChat() {
+      const question = chatInput.value.trim();
+      if (!question) return;
+      chatInput.value = '';
+      sendQuery(question);
+    }
+
+    async function sendQuery(question) {
+      sendBtn.disabled = true;
+      addMessage('user', question);
+      addTyping();
+
+      try {
+        const res = await fetch('/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question }),
+        });
+        const data = await res.json();
+        removeTyping();
+        addMessage('assistant', data.answer, data.sources, data.relevance, data.avg_distance);
+      } catch (err) {
+        removeTyping();
+        addMessage('assistant', 'Error: could not reach the API.');
+      }
+
+      sendBtn.disabled = false;
+      chatInput.focus();
+    }
+
+    function addMessage(role, content, sources, relevance, avgDistance) {
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+
+      const relevanceLabels = {
+        high: 'RAG grounded',
+        medium: 'Partially grounded',
+        low: 'Weak match',
+      };
+
+      let labelExtra = '';
+      if (role === 'assistant' && relevance) {
+        labelExtra = `<span class="relevance ${relevance}">${relevanceLabels[relevance] || relevance}</span>`;
+      }
+
+      let html = `<div class="label">${role === 'user' ? 'You' : 'rekall'}${labelExtra}</div>`;
+      html += `<div class="bubble">${role === 'assistant' ? formatMarkdown(content) : escapeHtml(content)}</div>`;
+
+      if (sources && sources.length) {
+        html += `<div class="sources"><details><summary>${sources.length} sources</summary>`;
+        sources.forEach(s => {
+          const name = s.split('/').pop().replace('.html', '');
+          html += `<a href="${s}" target="_blank">${name}</a>`;
+        });
+        html += `</details></div>`;
+      }
+
+      div.innerHTML = html;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function addTyping() {
+      const div = document.createElement('div');
+      div.className = 'message assistant';
+      div.id = 'typing';
+      div.innerHTML = `
+        <div class="label">rekall</div>
+        <div class="typing"><span></span><span></span><span></span></div>
+      `;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function removeTyping() {
+      const el = document.getElementById('typing');
+      if (el) el.remove();
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatMarkdown(text) {
+      text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+        return `<pre><code>${escapeHtml(code.trim())}</code></pre>`;
+      });
+      text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+      text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      text = text.split('\n\n').map(p => {
+        if (p.startsWith('<pre>')) return p;
+        return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+      }).join('');
+      return text;
+    }
+
+    landingInput.focus();
+  </script>
+</body>
+</html>
