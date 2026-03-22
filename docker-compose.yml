@@ -1,0 +1,41 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: rekall
+      POSTGRES_PASSWORD: rekall
+      POSTGRES_DB: rekall
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U rekall']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Uncomment to run Ollama in Docker (slower, no GPU on macOS).
+  # If using native Ollama, set OLLAMA_URL=http://host.docker.internal:11434 in .env
+  # ollama:
+  #   image: ollama/ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+
+  app:
+    build: .
+    ports:
+      - '8000:8000'
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      # ollama:
+      #   condition: service_started
+
+volumes:
+  pgdata:
+  # ollama_data:
