@@ -3,9 +3,9 @@ requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cfn-rag"
+name = "total-rekall"
 version = "0.1.0"
-description = "RAG system for querying AWS CloudFormation documentation using pgvector and Ollama"
+description = "RAG system for querying documentation using pgvector and Ollama. Runs entirely locally."
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
