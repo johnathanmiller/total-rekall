@@ -2,9 +2,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, UploadFile, File, Query
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -12,6 +12,7 @@ from src.config import settings
 from src.database import init_db, get_db
 from src.ingestion import ingest_url
 from src.retrieval import query_rag
+from src.transfer import export_chunks, import_chunks
 
 
 @asynccontextmanager
@@ -94,3 +95,28 @@ def ingest(request: IngestRequest, db: Session = Depends(get_db)):
 def query(request: QueryRequest, db: Session = Depends(get_db)):
     result = query_rag(db, request.question)
     return QueryResponse(**result)
+
+
+@app.get("/export")
+def export_data(db: Session = Depends(get_db)):
+    data = export_chunks(db)
+    return Response(
+        content=data,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": "attachment; filename=rekall-export.parquet"},
+    )
+
+
+class ImportResponse(BaseModel):
+    chunks_imported: int
+
+
+@app.post("/import", response_model=ImportResponse)
+async def import_data(
+    file: UploadFile = File(...),
+    clear: bool = Query(default=False),
+    db: Session = Depends(get_db),
+):
+    data = await file.read()
+    result = import_chunks(db, data, clear=clear)
+    return ImportResponse(**result)

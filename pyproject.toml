@@ -19,4 +19,6 @@ dependencies = [
     "beautifulsoup4>=4.12.3",
     "requests>=2.32.3",
     "httpx>=0.28.0",
+    "pyarrow>=18.0.0",
+    "python-multipart>=0.0.18",
 ]

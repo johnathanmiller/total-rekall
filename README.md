@@ -184,6 +184,29 @@ curl -X POST http://localhost:8000/query \
   -d '{"question": "How do I create an S3 bucket with versioning enabled?"}'
 ```
 
+### Export
+
+Download all ingested chunks and embeddings as a Parquet file. Share this with others so they can skip the ingestion step.
+
+```bash
+curl http://localhost:8000/export -o rekall-export.parquet
+```
+
+### Import
+
+Load a previously exported dataset. Use `clear=true` to replace existing data.
+
+```bash
+# Import alongside existing data
+curl -X POST http://localhost:8000/import \
+  -F file=@rekall-export.parquet
+
+# Replace all existing data with the import
+curl -X POST http://localhost:8000/import \
+  -F file=@rekall-export.parquet \
+  -F clear=true
+```
+
 ### Health check
 
 ```bash
@@ -198,6 +221,8 @@ curl http://localhost:8000/health
 | `/health` | GET | Health check |
 | `/ingest` | POST | Scrape and ingest documentation |
 | `/query` | POST | Ask a question |
+| `/export` | GET | Download chunks and embeddings as Parquet |
+| `/import` | POST | Upload a Parquet file to load chunks and embeddings |
 
 ## Configuration
 
