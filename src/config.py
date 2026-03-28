@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     ollama_url: str = "http://host.docker.internal:11434"
     ollama_model: str = "llama3.1:8b"
     embedding_dimensions: int = 384
-    chunk_size: int = 1000
-    chunk_overlap: int = 200
+    chunk_size: int = 800
+    chunk_overlap: int = 160
     top_k: int = 5
 
     class Config:

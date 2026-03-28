@@ -1,3 +1,4 @@
+import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urljoin, urlparse
 
@@ -77,15 +78,43 @@ def fetch_page_content(url: str) -> str:
 
 
 def chunk_text(text: str) -> list[str]:
-    words = text.split()
+    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    sentences = [s for s in sentences if s.strip()]
+
     chunks = []
-    start = 0
-    while start < len(words):
-        end = start + settings.chunk_size
-        chunk = " ".join(words[start:end])
+    current_sentences: list[str] = []
+    current_len = 0
+
+    for sentence in sentences:
+        sentence_len = len(sentence)
+
+        if current_len + sentence_len + (1 if current_sentences else 0) > settings.chunk_size:
+            if current_sentences:
+                chunks.append(" ".join(current_sentences))
+
+                # Build overlap: take sentences from the end of the current chunk
+                overlap_sentences: list[str] = []
+                overlap_len = 0
+                for s in reversed(current_sentences):
+                    if overlap_len + len(s) + (1 if overlap_sentences else 0) > settings.chunk_overlap:
+                        break
+                    overlap_sentences.insert(0, s)
+                    overlap_len += len(s) + (1 if len(overlap_sentences) > 1 else 0)
+
+                current_sentences = overlap_sentences
+                current_len = sum(len(s) for s in current_sentences) + max(0, len(current_sentences) - 1)
+            else:
+                current_sentences = []
+                current_len = 0
+
+        current_sentences.append(sentence)
+        current_len += sentence_len + (1 if len(current_sentences) > 1 else 0)
+
+    if current_sentences:
+        chunk = " ".join(current_sentences)
         if chunk.strip():
             chunks.append(chunk)
-        start += settings.chunk_size - settings.chunk_overlap
+
     return chunks
 
 
