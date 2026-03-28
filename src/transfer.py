@@ -13,7 +13,7 @@ def export_chunks(db: Session) -> bytes:
     """Export all chunks and embeddings to a Parquet file."""
     results = db.execute(
         text("""
-            SELECT source_url, resource_type, title, content,
+            SELECT source_url, resource_type, title, chunk_index, content,
                    embedding::text AS embedding
             FROM document_chunks
             ORDER BY id
@@ -24,6 +24,7 @@ def export_chunks(db: Session) -> bytes:
         "source_url": [r.source_url for r in results],
         "resource_type": [r.resource_type for r in results],
         "title": [r.title for r in results],
+        "chunk_index": [r.chunk_index for r in results],
         "content": [r.content for r in results],
         "embedding": [json.loads(r.embedding) for r in results],
     })
@@ -48,6 +49,7 @@ def import_chunks(db: Session, data: bytes, clear: bool = False) -> dict[str, in
             source_url=table.column("source_url")[i].as_py(),
             resource_type=table.column("resource_type")[i].as_py(),
             title=table.column("title")[i].as_py(),
+            chunk_index=table.column("chunk_index")[i].as_py(),
             content=table.column("content")[i].as_py(),
             embedding=table.column("embedding")[i].as_py(),
         )
