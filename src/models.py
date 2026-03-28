@@ -12,5 +12,6 @@ class DocumentChunk(Base):
     source_url = Column(String, nullable=False)
     resource_type = Column(String, nullable=False, index=True)
     title = Column(String, nullable=False)
+    chunk_index = Column(Integer, nullable=False, default=0)
     content = Column(Text, nullable=False)
     embedding = Column(Vector(settings.embedding_dimensions), nullable=False)

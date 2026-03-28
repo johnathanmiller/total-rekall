@@ -168,11 +168,12 @@ def ingest_url(db: Session, url: str, depth: int = 1, clear: bool = False) -> di
         chunks = result["chunks"]
         embeddings = generate_embeddings(chunks)
 
-        for chunk_text_content, embedding in zip(chunks, embeddings):
+        for idx, (chunk_text_content, embedding) in enumerate(zip(chunks, embeddings)):
             doc = DocumentChunk(
                 source_url=link["url"],
                 resource_type=link["title"],
                 title=link["title"],
+                chunk_index=idx,
                 content=chunk_text_content,
                 embedding=embedding,
             )
